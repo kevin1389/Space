@@ -8,11 +8,13 @@
 # stopping — it cannot wake a sandbox that is already stopped.
 #
 # This workflow takes effect once it is pushed to the default branch.
+# Re-pushed with a plain */5 schedule to re-register with GitHub's
+# scheduler after the original registration never fired.
 name: Preview keep-alive
 
 on:
   schedule:
-    - cron: "*/9 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
