@@ -1,0 +1,32 @@
+# Keeps the Freebuff preview sandbox awake.
+#
+# The sandbox auto-stops after ~15 minutes with no EXTERNAL preview traffic,
+# so a request from outside (this workflow, GitHub's servers) is what resets
+# the timer. The in-repo watchdog (scripts/preview-watch.sh) also pings the
+# preview from inside; this workflow is the external backstop that is
+# guaranteed to count as activity. Note it can only keep the sandbox from
+# stopping — it cannot wake a sandbox that is already stopped.
+#
+# This workflow takes effect once it is pushed to the default branch.
+name: Preview keep-alive
+
+on:
+  schedule:
+    - cron: "*/9 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping preview through the gateway
+        run: |
+          code=$(curl -sS --max-time 15 -o /dev/null -w '%{http_code}' \
+            "https://5173-76f872e7-3ceb-46e9-aa9a-8b309a2909ec.daytonaproxy01.net/" || true)
+          echo "preview ping -> HTTP ${code:-000}"
+          if [ "$code" = "000" ] || [ -z "$code" ]; then
+            echo "::notice::Preview unreachable (sandbox may already be stopped). This job keeps it awake; it cannot wake it."
+          fi
